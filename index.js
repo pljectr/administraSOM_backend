@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors'
 import mongoose from 'mongoose';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
@@ -21,6 +22,13 @@ mongoose.connect(process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/meuSistema'
 
 // Middleware para receber JSON do frontend
 app.use(express.json());
+app.use(
+  cors({
+    origin: process.env.FRONT_URL, // <-- location of the react app were connecting to. pass to .env
+    credentials: true,
+  })
+);
+
 
 // Configuração da sessão para ambiente LOCAL
 app.use(session({
@@ -46,7 +54,6 @@ app.use('/api/users', userRoutes);
 
 
 app.get('/', (req, res) => {
-    console.log(req)
   res.send('Hello World! administraSOM server is up & running');
 });
 

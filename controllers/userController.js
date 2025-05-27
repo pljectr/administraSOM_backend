@@ -33,6 +33,7 @@ export const registerUser = (req, res) => {
 };
 
 export const loginUser = (req, res, next) => {
+  console.log("trying to login")
   passport.authenticate('local', (err, user, info) => {
     if (err) return res.status(500).send({ erro: true, mensagem: "Erro interno." });
 
@@ -114,5 +115,22 @@ export const updatePassword = async (req, res) => {
     });
   }
 };
+
+export  const isAuth =  (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.json({
+      erro: false,
+      mensagem: "Usuário logado",
+      user: req.user
+    });
+  }
+  else {
+      return res.status(401).json({
+        erro: true,
+        mensagem: "Usuário não logado",
+        user: null
+      });
+  }
+}
  
 
