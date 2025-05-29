@@ -6,6 +6,10 @@ import MongoStore from 'connect-mongo';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import userRoutes from './routes/users.js';
+import activityRoutes from './routes/activities.js';
+import uploadRoutes from './routes/uploads.js';
+
+
 import './config/passport.js'; // sua config de passport separada
 
 dotenv.config(); // Carrega variáveis do .env
@@ -51,7 +55,8 @@ app.use(passport.session());
 
 // Rotas
 app.use('/api/users', userRoutes);
-
+app.use('/api/activities', activityRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 app.get('/', (req, res) => {
   res.send('Hello World! administraSOM server is up & running');
