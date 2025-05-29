@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import userRoutes from './routes/users.js';
 import activityRoutes from './routes/activities.js';
 import uploadRoutes from './routes/uploads.js';
+import path from 'path';
 
 
 import './config/passport.js'; // sua config de passport separada
@@ -15,7 +16,7 @@ import './config/passport.js'; // sua config de passport separada
 dotenv.config(); // Carrega variáveis do .env
 
 const app = express();
-
+const __dirname = path.resolve();
 // Conexão com o MongoDB local
 mongoose.connect(process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/meuSistema', {
 }).then(() => {
@@ -52,6 +53,7 @@ app.use(session({
 // Inicializa autenticação
 app.use(passport.initialize());
 app.use(passport.session());
+app.use('/files', express.static(path.resolve(__dirname, 'tmp', 'uploads')));
 
 // Rotas
 app.use('/api/users', userRoutes);

@@ -2,6 +2,12 @@ import Upload from '../models/uploads.js';
 import Activity from '../models/activities.js';
 import multer from 'multer';
 import multerConfig from '../config/multer.js';
+import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
+
+const unlinkAsync = promisify(fs.unlink);
+const __dirname = path.resolve();
 
 // GET: Lista uploads por pasta (objectId)
 export const listUploads = async (req, res) => {
@@ -87,7 +93,21 @@ export const deleteUpload = async (req, res) => {
       return res.status(404).json({ erro: true, mensagem: "Arquivo não encontrado." });
     }
 
-    await post.remove();
+    // Apaga arquivo físico localmente (se não for S3)
+    if (process.env.STORAGE_TYPE !== 's3') {
+      const filePath = path.resolve(process.cwd(), "..", "tmp", "uploads", post.key);
+      try {
+        await unlinkAsync(filePath);
+      } catch (err) {
+        console.warn("Arquivo local não encontrado para remoção:", err.message);
+      }
+    } else {
+      // aqui código para remover do S3, se quiser
+      // já tem no seu pre('remove'), mas você pode implementar aqui se quiser
+    }
+
+    // Remove o documento no MongoDB
+    await post.deleteOne();
 
     await Activity.create({
       action: "DELETE",
