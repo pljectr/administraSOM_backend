@@ -95,7 +95,7 @@ export const deleteUpload = async (req, res) => {
 
     // Apaga arquivo físico localmente (se não for S3)
     if (process.env.STORAGE_TYPE !== 's3') {
-      const filePath = path.resolve(process.cwd(), "..", "tmp", "uploads", post.key);
+      const filePath = path.resolve(process.cwd(), "..","backend", "tmp", "uploads", post.key);
       try {
         await unlinkAsync(filePath);
       } catch (err) {
