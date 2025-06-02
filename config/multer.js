@@ -6,6 +6,16 @@ const crypto = require("crypto");
 const aws = require("aws-sdk");
 const multerS3 = require("multer-s3");
 
+// Configura o cliente S3 do aws-sdk v2 para MinIO
+const s3 = new aws.S3({
+  accessKeyId: process.env.MINIO_ACCESS_KEY,
+  secretAccessKey: process.env.MINIO_SECRET_KEY,
+  endpoint: process.env.MINIO_ENDPOINT, // 
+  region: process.env.AWS_REGION || "us-east-1",
+  s3ForcePathStyle: true,
+  signatureVersion: "v4",
+});
+
 const storageTypes = {
   local: multer.diskStorage({
     destination: (req, file, cb) => {
@@ -22,8 +32,8 @@ const storageTypes = {
     }
   }),
   s3: multerS3({
-    s3: new aws.S3(),
-    bucket: "administraSOM",
+    s3: s3,
+    bucket: process.env.BUCKET_NAME,
     contentType: multerS3.AUTO_CONTENT_TYPE,
     acl: "public-read",
     key: (req, file, cb) => {
@@ -31,7 +41,6 @@ const storageTypes = {
         if (err) cb(err);
 
         const fileName = `${hash.toString("hex")}-${file.originalname}`;
-
         cb(null, fileName);
       });
     }
@@ -51,7 +60,7 @@ module.exports = {
       "image/pjpeg",
       "image/png",
       "image/gif",
-       "application/pdf"
+      "application/pdf"
     ];
 
     if (allowedMimes.includes(file.mimetype)) {

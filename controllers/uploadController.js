@@ -1,10 +1,11 @@
 import Upload from '../models/uploads.js';
 import Activity from '../models/activities.js';
-import multer from 'multer';
-import multerConfig from '../config/multer.js';
+
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
+import AWS from 'aws-sdk';
+
 
 const unlinkAsync = promisify(fs.unlink);
 const __dirname = path.resolve();
@@ -31,7 +32,7 @@ export const listUploads = async (req, res) => {
     console.error("Erro ao listar uploads:", err);
     await Activity.create({
       action: "ERROR",
-       documentId: objectId,
+      documentId: objectId,
       collectionType: "Uploads",
       description: `Erro ao listar uploads da pasta ${objectId}`,
       ip: req.ip,
@@ -95,20 +96,35 @@ export const deleteUpload = async (req, res) => {
       return res.status(404).json({ erro: true, mensagem: "Arquivo não encontrado." });
     }
 
-    // Apaga arquivo físico localmente (se não for S3)
-    if (process.env.STORAGE_TYPE !== 's3') {
-      const filePath = path.resolve(process.cwd(), "..","backend", "tmp", "uploads", post.key);
+    // 🔧 CHAMA manualmente a lógica de remoção do S3 ou local
+    if (process.env.STORAGE_TYPE === 's3') {
+      const s3 = new AWS.S3({
+        accessKeyId: process.env.MINIO_ACCESS_KEY,
+        secretAccessKey: process.env.MINIO_SECRET_KEY,
+        region: process.env.AWS_REGION,
+        endpoint: process.env.MINIO_ENDPOINT,
+        s3ForcePathStyle: true,
+      });
+
+      await s3
+        .deleteObject({
+          Bucket: process.env.BUCKET_NAME,
+          Key: post.key,
+        })
+        .promise()
+        .catch((err) => {
+          console.warn("Erro ao deletar do MinIO:", err.message);
+        });
+    } else {
+      const filePath = path.resolve(process.cwd(), "..", "backend", "tmp", "uploads", post.key);
       try {
         await unlinkAsync(filePath);
       } catch (err) {
         console.warn("Arquivo local não encontrado para remoção:", err.message);
       }
-    } else {
-      // aqui código para remover do S3, se quiser
-      // já tem no seu pre('remove'), mas você pode implementar aqui se quiser
     }
 
-    // Remove o documento no MongoDB
+    // Agora sim, remove do banco
     await post.deleteOne();
 
     await Activity.create({
@@ -135,3 +151,4 @@ export const deleteUpload = async (req, res) => {
     return res.status(500).json({ erro: true, mensagem: "Erro ao deletar arquivo." });
   }
 };
+
