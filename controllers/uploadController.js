@@ -19,7 +19,7 @@ export const listUploads = async (req, res) => {
     await Activity.create({
       action: "ACCESS",
       collectionType: "Uploads",
-      documentId: null,
+      documentId: objectId,
       user: req.user?._id,
       description: `Listou arquivos da pasta ${objectId}`,
       ip: req.ip,
@@ -31,6 +31,7 @@ export const listUploads = async (req, res) => {
     console.error("Erro ao listar uploads:", err);
     await Activity.create({
       action: "ERROR",
+       documentId: objectId,
       collectionType: "Uploads",
       description: `Erro ao listar uploads da pasta ${objectId}`,
       ip: req.ip,
@@ -63,7 +64,7 @@ export const uploadFile = async (req, res) => {
     await Activity.create({
       action: "CREATE",
       collectionType: "Uploads",
-      documentId: post._id,
+      documentId: objectId,
       user: req.user?._id,
       description: `Upload de arquivo "${name}" na pasta ${objectId}`,
       ip: req.ip,
@@ -76,6 +77,7 @@ export const uploadFile = async (req, res) => {
     await Activity.create({
       action: "ERROR",
       collectionType: "Uploads",
+      documentId: objectId,
       description: "Erro ao fazer upload de arquivo",
       ip: req.ip,
       metadata: { error: err.message },
