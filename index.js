@@ -5,13 +5,16 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import passport from 'passport';
 import dotenv from 'dotenv';
+import path from 'path';
+
+import facilities from './models/facilities.js';
+import './config/passport.js'; // sua config de passport separada
+
 import userRoutes from './routes/users.js';
 import activityRoutes from './routes/activities.js';
 import uploadRoutes from './routes/uploads.js';
-import path from 'path';
+import facilityRoutes from './routes/facilities.js';
 
-
-import './config/passport.js'; // sua config de passport separada
 
 dotenv.config(); // Carrega variáveis do .env
 
@@ -59,6 +62,10 @@ app.use('/files', express.static(path.resolve(__dirname, 'tmp', 'uploads')));
 app.use('/api/users', userRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/facilities', facilityRoutes);
+
+
+
 
 app.get('/', (req, res) => {
   res.send('Hello World! administraSOM server is up & running');
