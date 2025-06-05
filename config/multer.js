@@ -60,7 +60,11 @@ module.exports = {
       "image/pjpeg",
       "image/png",
       "image/gif",
-      "application/pdf"
+      "application/pdf",
+      "application/zip",
+      "application/x-zip-compressed",
+      "multipart/x-zip",
+      "application/x-compressed"
     ];
 
     if (allowedMimes.includes(file.mimetype)) {
