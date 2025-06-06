@@ -26,6 +26,14 @@ const DocumentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: false, // logins anônimos não têm user
   },
+  projectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: false, // logins anônimos não têm user
+  },
+  cardId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: false, // logins anônimos não têm user
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -34,7 +42,7 @@ const DocumentSchema = new mongoose.Schema({
 
 DocumentSchema.pre("save", function () {
   if (!this.url) {
-    this.url = process.env.STORAGE_TYPE === "s3" ? `http://10.25.120.113:9001/${process.env.BUCKET_NAME}/${this.key}` : `${process.env.APP_URL}/files/${this.key}` ;
+    this.url = process.env.STORAGE_TYPE === "s3" ? `http://10.25.120.113:9001/${process.env.BUCKET_NAME}/${this.key}` : `${process.env.APP_URL}/files/${this.key}`;
   } //se não tem URL, ou seja, se eu salvo no storage, eu darei o caminho localhost (ou a URL definida em .env) e crio uma route
 });
 

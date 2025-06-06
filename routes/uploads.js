@@ -6,17 +6,19 @@ import { listUploads, uploadFile, deleteUpload } from '../controllers/uploadCont
 
 const router = express.Router();
 
-// Lista arquivos de uma pasta
-router.get("/:objectId", listUploads);
+// Lista arquivos de um card dentro de um projeto
+// GET /api/uploads/:projectId/:cardId
+router.get('/:projectId/:cardId', listUploads);
 
-// Upload de um novo arquivo para uma pasta
+// Upload de um novo arquivo para um card
+// POST /api/uploads/:projectId/:cardId
 router.post(
-  "/:objectId", // recebe o objectId também via rota, se quiser usar no req.params
-  multer(multerConfig).single("file"),
+  '/:projectId/:cardId',
+  multer(multerConfig).single('file'),
   uploadFile
 );
 
-// Deleta um arquivo específico
-router.delete("/:id", deleteUpload);
+// Deleta um arquivo específico (recebe apenas o ID do upload)
+router.delete('/:id', deleteUpload);
 
 export default router;

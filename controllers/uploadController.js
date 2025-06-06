@@ -6,25 +6,25 @@ import path from 'path';
 import { promisify } from 'util';
 import AWS from 'aws-sdk';
 
-
 const unlinkAsync = promisify(fs.unlink);
 const __dirname = path.resolve();
 
-// GET: Lista uploads por pasta (objectId)
+// GET: Lista uploads de um card dentro de um projeto
 export const listUploads = async (req, res) => {
-  const { objectId } = req.params;
+  const { projectId, cardId } = req.params;
 
   try {
-    const posts = await Upload.find({ objectId });
+    // Busca apenas arquivos vinculados a esse projeto e card
+    const posts = await Upload.find({ projectId, cardId });
 
     await Activity.create({
       action: "ACCESS",
       collectionType: "Uploads",
-      documentId: objectId,
+      documentId: cardId,
       user: req.user?._id,
-      description: `Listou arquivos da pasta ${objectId}`,
+      description: `Listou arquivos do card ${cardId} no projeto ${projectId}`,
       ip: req.ip,
-      metadata: { objectId },
+      metadata: { projectId, cardId },
     });
 
     return res.json(posts);
@@ -32,11 +32,11 @@ export const listUploads = async (req, res) => {
     console.error("Erro ao listar uploads:", err);
     await Activity.create({
       action: "ERROR",
-      documentId: objectId,
+      documentId: cardId,
       collectionType: "Uploads",
-      description: `Erro ao listar uploads da pasta ${objectId}`,
+      description: `Erro ao listar uploads do card ${cardId} no projeto ${projectId}`,
       ip: req.ip,
-      metadata: { error: err.message, objectId },
+      metadata: { error: err.message, projectId, cardId },
     });
 
     return res.status(500).json({ erro: true, mensagem: "Erro ao listar uploads." });
@@ -47,10 +47,12 @@ export const listUploads = async (req, res) => {
 export const uploadFile = async (req, res) => {
   try {
     const { originalname: name, size, key, location: url = "" } = req.file;
-    const { objectId, description } = req.body;
+    const { projectId, cardId, description } = req.body;
 
-    if (!objectId) {
-      return res.status(400).json({ erro: true, mensagem: "objectId da pasta é obrigatório." });
+    if (!projectId || !cardId) {
+      return res
+        .status(400)
+        .json({ erro: true, mensagem: "projectId e cardId são obrigatórios." });
     }
 
     const post = await Upload.create({
@@ -58,18 +60,19 @@ export const uploadFile = async (req, res) => {
       size,
       key,
       url,
-      objectId,
+      projectId,
+      cardId,
       description,
     });
 
     await Activity.create({
       action: "CREATE",
       collectionType: "Uploads",
-      documentId: objectId,
+      documentId: post.cardId,
       user: req.user?._id,
-      description: `Upload de arquivo "${name}" na pasta ${objectId}`,
+      description: `Upload de arquivo "${name}" para card ${cardId} do projeto ${projectId}`,
       ip: req.ip,
-      metadata: { size, key, objectId },
+      metadata: { size, key, projectId, cardId },
     });
 
     return res.json(post);
@@ -78,7 +81,7 @@ export const uploadFile = async (req, res) => {
     await Activity.create({
       action: "ERROR",
       collectionType: "Uploads",
-      documentId: objectId,
+      documentId: null, // não temos um ID de upload válido aqui
       description: "Erro ao fazer upload de arquivo",
       ip: req.ip,
       metadata: { error: err.message },
@@ -96,7 +99,7 @@ export const deleteUpload = async (req, res) => {
       return res.status(404).json({ erro: true, mensagem: "Arquivo não encontrado." });
     }
 
-    // 🔧 CHAMA manualmente a lógica de remoção do S3 ou local
+    // 🔧 Remove do MinIO ou local conforme STORAGE_TYPE
     if (process.env.STORAGE_TYPE === 's3') {
       const s3 = new AWS.S3({
         accessKeyId: process.env.MINIO_ACCESS_KEY,
@@ -124,17 +127,17 @@ export const deleteUpload = async (req, res) => {
       }
     }
 
-    // Agora sim, remove do banco
+    // Remove do banco
     await post.deleteOne();
 
     await Activity.create({
       action: "DELETE",
       collectionType: "Uploads",
-      documentId: post._id,
+      documentId: post.cardId,
       user: req.user?._id,
       description: `Arquivo "${post.name}" deletado`,
       ip: req.ip,
-      metadata: { objectId: post.objectId },
+      metadata: { projectId: post.projectId, cardId: post.cardId },
     });
 
     return res.send();
@@ -151,4 +154,3 @@ export const deleteUpload = async (req, res) => {
     return res.status(500).json({ erro: true, mensagem: "Erro ao deletar arquivo." });
   }
 };
-
