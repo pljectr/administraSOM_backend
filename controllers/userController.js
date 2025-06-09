@@ -2,6 +2,16 @@ import User from '../models/users.js';
 import Activity from '../models/activities.js';
 import passport from 'passport';
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    console.error('Erro ao buscar usuários:', err);
+    res.status(500).json({ erro: true, mensagem: 'Erro ao buscar usuários.' });
+  }
+};
+
 export const registerUser = (req, res) => {
   const {
     username,

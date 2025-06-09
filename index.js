@@ -14,7 +14,7 @@ import userRoutes from './routes/users.js';
 import activityRoutes from './routes/activities.js';
 import uploadRoutes from './routes/uploads.js';
 import facilityRoutes from './routes/facilities.js';
-
+import contractRoutes from './routes/contracts.js';
 
 dotenv.config(); // Carrega variáveis do .env
 
@@ -63,7 +63,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/facilities', facilityRoutes);
-
+app.use('/api/contracts', contractRoutes);
 
 
 
