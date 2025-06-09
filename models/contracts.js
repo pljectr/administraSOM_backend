@@ -72,6 +72,23 @@ const ContractSchema = new mongoose.Schema({
         // usuário responsável por fiscalizar este contrato
     },
 
+    // Empresa contratada
+    company: {
+        cnpj: { type: String, required: true, trim: true },
+        name: { type: String, required: true, trim: true },
+        address: { type: String, required: true, trim: true },
+        observations: { type: String, default: "", trim: true }
+    },
+
+    // Desoneração da planilha de preços
+    desonerado: { type: Boolean, default: false },
+
+    // BDI: Benefícios e Despesas Indiretas
+    bdi: {
+        servicePercent: { type: Number, default: 0 }, // tipo A: planilha de serviços
+        equipmentPercent: { type: Number, default: 0 } // tipo B: planilha de equipamentos
+    },
+
     // ----------------------------
     // Referência à “OM” (facility)
     // ----------------------------
@@ -117,17 +134,17 @@ const ContractSchema = new mongoose.Schema({
 });
 
 ContractSchema.virtual("cards", {
-  ref: "Cards",
-  localField: "_id",
-  foreignField: "contractId",
-  justOne: false
+    ref: "Cards",
+    localField: "_id",
+    foreignField: "contractId",
+    justOne: false
 });
 
 ContractSchema.virtual("contractItems", {
-  ref: "ContractItems",
-  localField: "_id",
-  foreignField: "contractId",
-  justOne: false
+    ref: "ContractItems",
+    localField: "_id",
+    foreignField: "contractId",
+    justOne: false
 });
 
 

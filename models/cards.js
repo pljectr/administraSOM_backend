@@ -192,15 +192,6 @@ CardSchema.virtual("uploads", {
   justOne: false
 });
 
-// ***************************************
-// 5) Virtual para puxar processos específicos (caso queira)
-//    — mas, se você gravar tudo dentro deste próprio card, talvez não seja necessário.
-// ***************************************
-CardSchema.virtual("processes", {
-  ref: "Processes",
-  localField: "_id",
-  foreignField: "cardId",
-  justOne: false
-});
+
 
 export default mongoose.model("Cards", CardSchema);
