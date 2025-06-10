@@ -1,66 +1,114 @@
-const mongoose = require("mongoose");
-const aws = require("aws-sdk");
-const fs = require("fs");
-const path = require("path");
-const { promisify } = require("util");
+// src/models/uploads.js
 
-//const s3 = new aws.S3();
+import mongoose from "mongoose";
+import aws from "aws-sdk"; // Usaremos o AWS SDK para MinIO
+import fs from "fs";
+import path from "path";
+import { promisify } from "util";
 
+// Configuração do cliente S3 (MinIO)
+// Importante: Esta instância é usada APENAS para o hook pre('remove')
+// que agora será para DELEÇÃO PERMANENTE do arquivo do armazenamento.
+// A lógica de "mover para a lixeira" será tratada no controller.
 const s3 = new aws.S3({
   accessKeyId: process.env.MINIO_ACCESS_KEY,
   secretAccessKey: process.env.MINIO_SECRET_KEY,
-  endpoint: process.env.MINIO_ENDPOINT, // 
+  endpoint: process.env.MINIO_ENDPOINT,
   region: process.env.AWS_REGION || "us-east-1",
   s3ForcePathStyle: true,
   signatureVersion: "v4",
 });
 
+const UploadSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  }, // Nome original do arquivo
+  size: {
+    type: Number,
+    required: true
+  }, // Tamanho do arquivo em bytes
+  key: {
+    type: String,
+    required: true,
+    unique: true
+  }, // Chave única do arquivo no armazenamento (gerada pelo Multer)
+  url: {
+    type: String
+  }, // URL para acessar o arquivo
 
-const DocumentSchema = new mongoose.Schema({
-  name: String,
-  size: Number,
-  key: String,
-  url: String,
-  description: String,
-  objectId: {
+  description: {
+    type: String,
+    default: "",
+    trim: true
+  }, // Descrição opcional para o arquivo
+
+  // --- Referências para vincular o documento ---
+  contractId: { // Renomeado de 'projectId' para 'contractId'
     type: mongoose.Schema.Types.ObjectId,
-    required: false, // logins anônimos não têm user
-  },
-  projectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: false, // logins anônimos não têm user
+    ref: "Contracts",
+    required: true, // Todo documento deve pertencer a um contrato
   },
   cardId: {
     type: mongoose.Schema.Types.ObjectId,
-    required: false, // logins anônimos não têm user
+    ref: "Cards",
+    required: false, // Opcional: se o documento está vinculado a um card específico
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  itemId: { // NOVO CAMPO: para vincular a um ContractItem específico
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Items",
+    required: false, // Opcional: se o documento está vinculado a um item de contrato (ex: para medições)
+  },
+  uploadedBy: { // NOVO CAMPO: Usuário que fez o upload do arquivo
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Users",
+    required: true, // Assumindo que todos os uploads são feitos por usuários autenticados
+  },
+}, {
+  timestamps: true // Adiciona createdAt e updatedAt automaticamente
 });
 
-DocumentSchema.pre("save", function () {
+// Hook 'pre-save' para definir a URL do arquivo se ainda não estiver definida
+UploadSchema.pre("save", function () {
   if (!this.url) {
-    this.url = process.env.STORAGE_TYPE === "s3" ? `http://10.25.120.113:9001/${process.env.BUCKET_NAME}/${this.key}` : `${process.env.APP_URL}/files/${this.key}`;
-  } //se não tem URL, ou seja, se eu salvo no storage, eu darei o caminho localhost (ou a URL definida em .env) e crio uma route
-});
-
-DocumentSchema.pre("remove", function () {
-  if (process.env.STORAGE_TYPE === "s3") {
-    return s3.deleteObject({
-      Bucket: process.env.BUCKET_NAME,
-      Key: this.key,
-    }).promise().then(response => {
-      console.log("Arquivo deletado do MinIO:", this.key);
-    }).catch(error => {
-      console.error("Erro ao deletar do MinIO:", error);
-    });
-  } else {
-    return promisify(fs.unlink)(
-      path.resolve(__dirname, "..", "tmp", "uploads", this.key)
-    );
+    if (process.env.STORAGE_TYPE === "s3") {
+      this.url = `${process.env.MINIO_ENDPOINT}/${process.env.BUCKET_NAME}/${this.key}`;
+    } else { // Armazenamento local
+      this.url = `${process.env.APP_URL}/files/${this.key}`;
+    }
   }
 });
 
-module.exports = mongoose.model("Uploads", DocumentSchema);
+// ATENÇÃO: Este hook 'pre-remove' agora só lida com a DELEÇÃO PERMANENTE do arquivo do armazenamento.
+// A lógica de "mover para a lixeira" será tratada DIRETAMENTE no controller.
+UploadSchema.pre("remove", function (next) {
+  if (process.env.STORAGE_TYPE === "s3") {
+    s3.deleteObject({
+        Bucket: process.env.BUCKET_NAME, // Deleta do bucket principal
+        Key: this.key,
+      }).promise()
+      .then(response => {
+        console.log("Arquivo deletado permanentemente do MinIO:", this.key);
+        next();
+      })
+      .catch(error => {
+        console.error("Erro ao deletar permanentemente do MinIO:", error);
+        next(error);
+      });
+  } else {
+    const unlinkAsync = promisify(fs.unlink);
+    const filePath = path.resolve(__dirname, "..", "tmp", "uploads", this.key);
+    unlinkAsync(filePath)
+      .then(() => {
+        console.log("Arquivo deletado permanentemente do sistema de arquivos local:", this.key);
+        next();
+      })
+      .catch(error => {
+        console.error("Erro ao deletar permanentemente do sistema de arquivos local:", error);
+        next(error);
+      });
+  }
+});
+
+export default mongoose.model("Uploads", UploadSchema);

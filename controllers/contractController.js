@@ -29,6 +29,7 @@ export const createContract = async (req, res) => {
         // Mapeia cada linha para Item
         const itemsToCreate = rows.map(row => ({
           contractId,
+          orderNumber: row.orderNumber,
           macroItem: row.macroItem,
           sheetType: row.sheetType,
           isOriginal: row.isOriginal === 'TRUE' || row.isOriginal === true,

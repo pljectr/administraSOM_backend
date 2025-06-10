@@ -15,6 +15,7 @@ const PriceBreakdownSchema = new mongoose.Schema({
 const ItemSchema = new mongoose.Schema({
   contractId: { type: mongoose.Schema.Types.ObjectId, ref: "Contracts" },
   itemNumber: { type: String, trim: true },              // numeração (1.1, 1.2, ...)
+  orderNumber: { type: String, trim: true },              // numeração corrida (1,2,3,4,5 ... para ordenar os itens em ordem no frontend)
   compositionCode: { type: String, trim: true },         // código de composição
   base: { type: String, trim: true },                    // fonte da planilha (ex.: "SINAPI")
   description: { type: String, trim: true },             // descrição do serviço
@@ -44,7 +45,7 @@ const ItemSchema = new mongoose.Schema({
 });
 
 // Inicializa originalQty e currentQty no momento da criação
-ItemSchema.pre("save", function(next) {
+ItemSchema.pre("save", function (next) {
   if (this.isNew) {
     this.originalQty = this.contractedQty;
     this.currentQty = this.contractedQty;
@@ -64,7 +65,7 @@ ItemSchema.pre("save", function(next) {
 /**
  * Aplica medição: reduz currentQty e retorna saldo atual.
  */
-ItemSchema.methods.applyMeasurement = async function(quantityMeasured) {
+ItemSchema.methods.applyMeasurement = async function (quantityMeasured) {
   this.currentQty = Math.max(0, (this.currentQty || 0) - quantityMeasured);
   await this.save();
   return this.currentQty;
