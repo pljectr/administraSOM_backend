@@ -52,6 +52,8 @@ const CardSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      "Tasks",
+      "Notas",
       "Medição",
       "Aditivo",
       "Diário de Observações",
@@ -130,7 +132,7 @@ const CardSchema = new mongoose.Schema({
 // 1) Antes de salvar um novo card:
 //    — definimos o estágio inicial e já criamos a primeira entrada em history
 // ***************************************
-CardSchema.pre("validate", function(next) {
+CardSchema.pre("validate", function (next) {
   if (this.isNew) {
     // Ao criar o card, inserimos logo no history o estágio inicial
     // assumindo que `currentStage` já esteja atribuído no momento da criação.
@@ -148,7 +150,7 @@ CardSchema.pre("validate", function(next) {
 //    — fecha a entrada atual em history (preenche exitedAt) e adiciona nova entrada
 //    — atualiza currentStage
 // ***************************************
-CardSchema.methods.moveToStage = async function(newStage) {
+CardSchema.methods.moveToStage = async function (newStage) {
   // Se for a mesma etapa, nada a fazer
   if (this.currentStage === newStage) return;
 
