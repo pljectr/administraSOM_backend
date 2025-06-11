@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const multer = require("multer");
+const {sanitizeFilenameBackend} = require('../utils/functions')
 const path = require("path");
 const crypto = require("crypto");
 const aws = require("aws-sdk");
@@ -40,7 +41,7 @@ const storageTypes = {
       crypto.randomBytes(16, (err, hash) => {
         if (err) cb(err);
 
-        const fileName = `${hash.toString("hex")}-${file.originalname}`;
+        const fileName = `${hash.toString("hex")}-${sanitizeFilenameBackend(file.originalname)}`;
         cb(null, fileName);
       });
     }

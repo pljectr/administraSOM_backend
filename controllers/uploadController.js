@@ -8,6 +8,11 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import AWS from 'aws-sdk';
+import { sanitizeFilenameBackend } from '../utils/functions.js';
+
+// Adicione esta função ao seu backend, pode ser em um arquivo de utilitários
+
+
 
 const unlinkAsync = promisify(fs.unlink);
 // __dirname já está disponível em módulos ES se você usar 'type: module' no package.json
@@ -100,7 +105,9 @@ export const listTrashs = async (req, res) => {
 // POST: Upload de arquivo com log
 export const uploadFile = async (req, res) => {
   try {
+
     const { originalname: name, size, key, location: url = "" } = req.file;
+
     // Alterado de projectId para contractId, adicionado itemId
     const { contractId, cardId, itemId, description } = req.body;
 
@@ -125,7 +132,7 @@ export const uploadFile = async (req, res) => {
     }
 
     const post = await Upload.create({
-      name,
+      name: sanitizeFilenameBackend(name),
       size,
       key,
       url,
