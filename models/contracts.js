@@ -2,6 +2,28 @@
 
 import mongoose from "mongoose";
 
+// --- NOVO Sub-schema para o log de mudanças ---
+const ChangeLogSchema = new mongoose.Schema({
+    changedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Users", // Referência ao modelo de Usuários, assumindo que você tem um
+        required: true,
+        // O ID do usuário que realizou a mudança
+    },
+    changedAt: {
+        type: Date,
+        default: Date.now,
+        required: true,
+        // O timestamp da mudança
+    },
+    oldState: {
+        type: mongoose.Schema.Types.Mixed, // Armazena o estado do documento ANTES da mudança
+        required: true,
+        // Contém o objeto do contrato como ele era antes desta atualização.
+        // Usamos Mixed para flexibilidade, já que será um snapshot de todo o documento.
+    },
+}, { _id: false }); // Não é necessário um ID separado para cada entrada de log
+
 // --- Sub-schema para cada item do cronograma (mês, valor, percentual) ---
 const CronogramaItemSchema = new mongoose.Schema({
     month: {
@@ -101,7 +123,12 @@ const ContractSchema = new mongoose.Schema({
         // Array de versões do cronograma. O último item é o cronograma ativo.
         // Cada versão contém um array de CronogramaItemSchema.
     },
-
+    // --- NOVO CAMPO: Histórico de Alterações ---
+    changes: {
+        type: [ChangeLogSchema], // Um array de objetos ChangeLogSchema
+        default: [],
+        // Registra todas as alterações feitas no contrato, com quem fez e o estado anterior.
+    },
     // ----------------------------
     // Data de Expiração Administrativa (Novo Campo)
     // ----------------------------
