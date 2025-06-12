@@ -16,6 +16,7 @@ import uploadRoutes from './routes/uploads.js';
 import facilityRoutes from './routes/facilities.js';
 import contractRoutes from './routes/contracts.js';
 import cardRoutes from './routes/cards.js'
+import { createInitialAdmin } from './utils/functions.js';
 
 dotenv.config(); // Carrega variáveis do .env
 
@@ -67,7 +68,7 @@ app.use('/api/facilities', facilityRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/cards', cardRoutes);
 
-
+//createInitialAdmin()
 app.get('/', (req, res) => {
   res.send('Hello World! administraSOM server is up & running');
 });
